@@ -118,6 +118,60 @@ impl<T> SuccessfulMatch<T> {
         }
     }
 
+    /// Analogue to the `and_then` method but retains the original match index and value while returning a new "rest" part.
+    pub fn discarding<F, R>(self, f: F) -> Match<T>
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        if let Ok((_, _, rest)) =
+            Into::<Match<T>>::into(f(self.index, self.matched.clone(), self.rest)).take()
+        {
+            Self::new(self.index, self.matched, rest).into()
+        } else {
+            Match::failed()
+        }
+    }
+
+    /// Non-failing variant of the `discarding` method.
+    pub fn discarding_non_failing<F, R>(self, f: F) -> Self
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Self>,
+    {
+        let rest: T = Into::<Self>::into(f(self.index, self.matched.clone(), self.rest)).rest;
+
+        Self::new(self.index, self.matched, rest)
+    }
+
+    /// Analogue to the `discarding` method but the "matched" part is passed by reference.
+    pub fn discarding_ref<F, R>(self, f: F) -> Match<T>
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        if let Ok((_, _, rest)) =
+            Into::<Match<T>>::into(f(self.index, &self.matched, self.rest)).take()
+        {
+            Self::new(self.index, self.matched, rest).into()
+        } else {
+            Match::failed()
+        }
+    }
+
+    /// Non-failing variant of the `discarding_ref` method.
+    pub fn discarding_ref_non_failing<F, R>(self, f: F) -> Self
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Self>,
+    {
+        let rest: T = Into::<Self>::into(f(self.index, &self.matched, self.rest)).rest;
+
+        Self::new(self.index, self.matched, rest)
+    }
+
     /// Converts current match into a sequence one.
     /// # Notes
     /// This functionality is available only with the `std` feature.
@@ -287,6 +341,33 @@ impl<T> Match<T> {
         }
     }
 
+    /// Analogue to the `and_then` method but retains the original match index and value while returning a new "rest" part.
+    pub fn discarding<F, R>(self, f: F) -> Self
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Self>,
+    {
+        if let Ok(matched) = self.into_successful() {
+            matched.discarding(f)
+        } else {
+            Self::failed()
+        }
+    }
+
+    /// Analogue to the `discarding` method but the "matched" part is passed by reference.
+    pub fn discarding_ref<F, R>(self, f: F) -> Self
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Self>,
+    {
+        if let Ok(matched) = self.into_successful() {
+            matched.discarding_ref(f)
+        } else {
+            Self::failed()
+        }
+    }
+
     /// Converts current match into a sequence one.
     /// # Notes
     /// This functionality is available only with the `std` feature.
@@ -437,6 +518,29 @@ where
         } else {
             Self::failed()
         }
+    }
+
+    /// Analogue to the `and_then` method but retains the original match index and value while returning a new "rest" part.
+    pub fn discarding<F, R>(mut self, f: F) -> Self
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        self.last_match = self.last_match.discarding(f);
+
+        self
+    }
+
+    /// Analogue to the `discarding` method but the "matched" part is passed by reference.
+    pub fn discarding_ref<F, R>(mut self, f: F) -> Self
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        self.last_match = self.last_match.discarding_ref(f);
+
+        self
     }
 }
 

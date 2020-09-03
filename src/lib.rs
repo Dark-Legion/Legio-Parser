@@ -51,6 +51,7 @@ pub use match_with_in_range::*;
 
 #[cfg(test)]
 mod tests {
+    mod discarding;
     mod match_static;
     mod match_static_multiple;
     mod match_with;
