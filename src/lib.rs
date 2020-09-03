@@ -9,7 +9,7 @@
 //!
 //! # Features
 //! * `std`
-//!     * Provides full version of the interfaces for pattern matching.
+//!     * Provides interfaces for pattern matching that use the standard library.
 //!     * Opt-out of this feature to use limited version relying only on `libcore`.
 //!     * **Note**: Opting-out will limit some functionalities.
 
