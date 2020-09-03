@@ -12,3 +12,17 @@ The use of unsafe code is forbidden within the library in order to provide purel
 * `no_track_caller`
     * Disables the `#[track_caller]` attributes within the library.
     * This is required for compilation below version 1.46 of Rust.
+
+## How to include into project?
+* Variant 1
+    
+    Write this under the `[dependancies]` section:
+    ```
+    legio-parser = { git = "https://github.com/Dark-Legion/Legio-Parser.git", branch = "release" }
+    ```
+* Variant 2
+    ```
+    [dependencies.legio-parser]
+    git = "https://github.com/Dark-Legion/Legio-Parser.git"
+    branch = "release"
+    ```
