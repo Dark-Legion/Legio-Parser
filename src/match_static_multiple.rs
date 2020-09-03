@@ -5,12 +5,12 @@ use crate::{Match, MatchStatic};
 /// See [`MatchStatic`] for more information.
 ///
 /// [`MatchStatic`]: trait.MatchStatic.html
-pub trait MatchStaticMultiple<'object, E, T, U> {
+pub trait MatchStaticMultiple<'object, E, T, R> {
     /// Matches multiple "static" patterns.
-    fn match_static_multiple(&'object self, pattern: U) -> Match<T>;
+    fn match_static_multiple(&'object self, pattern: T) -> Match<R>;
 }
 
-impl<'object, 'pattern, E, T, I> MatchStaticMultiple<'object, E, &'object [E], T> for I
+impl<'object, 'pattern, E, T, I> MatchStaticMultiple<'object, E, T, &'object [E]> for I
 where
     E: 'pattern + PartialEq + Clone,
     T: AsRef<[&'pattern [E]]>,
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<'object, 'pattern, T> MatchStaticMultiple<'object, char, &'object str, T> for str
+impl<'object, 'pattern, T> MatchStaticMultiple<'object, char, T, &'object str> for str
 where
     T: AsRef<[&'pattern str]>,
 {
