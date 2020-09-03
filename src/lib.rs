@@ -27,15 +27,15 @@
     clippy::cargo
 )]
 
-mod match_result;
-pub use match_result::*;
-
 /// This module re-exports all essential types and all (public) traits.
 ///
 /// Traits that are inaccessible are used only for implementations, leaving traits free for new implementations.
 pub mod prelude {
     pub use crate::{Match, MatchFailed, MatchStatic, MatchWith, MatchWithInRange};
 }
+
+mod match_result;
+pub use match_result::*;
 
 mod match_static;
 pub use match_static::*;
