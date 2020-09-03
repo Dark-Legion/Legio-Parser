@@ -16,10 +16,28 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo +nightly build --verbose
+      run: cargo build --features "no_track_caller" --verbose
+
+  build_no_std:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
     - name: Build without "std"
-      run: cargo +nightly build --no-default-features --verbose
+      run: cargo build --no-default-features --features "no_track_caller" --verbose
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
     - name: Run tests
-      run: cargo +nightly test --verbose
+      run: cargo test --features "no_track_caller" --verbose
+
+  test_no_std:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
     - name: Run tests without "std"
-      run: cargo +nightly test --no-default-features --verbose
+      run: cargo test --no-default-features --features "no_track_caller" --verbose
