@@ -54,14 +54,13 @@ impl<T> SuccessfulMatch<T> {
         f(self.index, self.matched, self.rest).into()
     }
 
-    /// Analogue to `Option` and `Result`'s method `and_then`.
-    ///
-    /// This method is analogue to `and_then` but return type is non-failing.
-    pub fn and_then_non_failing<F>(self, f: F) -> Self
+    /// Non-failing variant of the `and_then` method.
+    pub fn and_then_non_failing<F, R>(self, f: F) -> Self
     where
-        F: FnOnce(usize, T, T) -> Self,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Self>,
     {
-        f(self.index, self.matched, self.rest)
+        f(self.index, self.matched, self.rest).into()
     }
 
     /// Analogue to the `and_then` method but adds a condition.
@@ -214,14 +213,15 @@ impl<T> Match<T> {
 
     /// Analogue to `Option` and `Result`'s method `and_then`.
     /// This method takes one function with two parameters.
-    /// The first parameter of the function is the matched value.
-    /// The second parameter of the function is the rest of the original value.
+    /// The first parameter of the function is the matched index.
+    /// The second parameter of the function is the matched value.
+    /// The third parameter of the function is the rest of the original value.
     /// The function has to return a match with the same argument type as the object it is
     /// called on and with the exception that the lifetime parameter can be smaller or equal.
     pub fn and_then<F, R>(self, f: F) -> Self
     where
         F: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
+        R: Into<Self>,
     {
         if let Some(matched) = self.matched {
             let (index, matched, rest): (usize, T, T) = matched.take();
@@ -235,16 +235,16 @@ impl<T> Match<T> {
     /// Analogue to the `and_then` method but adds a condition.
     /// When the condition is met, the progression function is executed.
     /// Otherwise, match fails.
-    pub fn and_then_if<F1, F2, R>(self, condition: F1, f: F2) -> Match<T>
+    pub fn and_then_if<F1, F2, R>(self, condition: F1, f: F2) -> Self
     where
         F1: FnOnce(usize, &T, &T) -> bool,
         F2: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
+        R: Into<Self>,
     {
         if let Ok(matched) = self.into_successful() {
             matched.and_then_if(condition, f)
         } else {
-            Match::failed()
+            Self::failed()
         }
     }
 
@@ -256,34 +256,34 @@ impl<T> Match<T> {
         condition: FC,
         f_true: FT,
         f_false: FF,
-    ) -> Match<T>
+    ) -> Self
     where
         FC: FnOnce(usize, &T, &T) -> bool,
         FT: FnOnce(usize, T, T) -> RT,
-        RT: Into<Match<T>>,
+        RT: Into<Self>,
         FF: FnOnce(usize, T, T) -> RF,
-        RF: Into<Match<T>>,
+        RF: Into<Self>,
     {
         if let Ok(matched) = self.into_successful() {
             matched.and_then_if_else(condition, f_true, f_false)
         } else {
-            Match::failed()
+            Self::failed()
         }
     }
 
     /// Analogue to the `and_then` method but adds a condition.
     /// When the condition is met, the first progression function is executed.
     /// Otherwise, the match on which the method was called is returned.
-    pub fn and_then_if_else_self<FC, F, R>(self, condition: FC, f: F) -> Match<T>
+    pub fn and_then_if_else_self<FC, F, R>(self, condition: FC, f: F) -> Self
     where
         FC: FnOnce(usize, &T, &T) -> bool,
         F: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
+        R: Into<Self>,
     {
         if let Ok(matched) = self.into_successful() {
             matched.and_then_if_else_self(condition, f)
         } else {
-            Match::failed()
+            Self::failed()
         }
     }
 
@@ -386,8 +386,9 @@ where
 
     /// Analogue to `Option` and `Result`'s method `and_then`.
     /// This method takes one function with two parameters.
-    /// The first parameter of the function is the matched value.
-    /// The second parameter of the function is the rest of the original value.
+    /// The first parameter of the function is the matched index.
+    /// The second parameter of the function is the matched value.
+    /// The third parameter of the function is the rest of the original value.
     /// The function has to return a match with the same argument type as the object it is
     /// called on and with the exception that the lifetime parameter can be smaller or equal.
     pub fn and_then<F, R>(self, f: F) -> Self
@@ -414,8 +415,9 @@ where
 
     /// Analogue to `Option` and `Result`'s method `and_then`.
     /// This method takes one function with two parameters.
-    /// The first parameter of the function is the matched value.
-    /// The second parameter of the function is the rest of the original value.
+    /// The first parameter of the function is the matched index.
+    /// The second parameter of the function is the matched value.
+    /// The third parameter of the function is the rest of the original value.
     /// The function has to return a match with the same argument type as the object it is
     /// called on and with the exception that the lifetime parameter can be smaller or equal.
     pub fn and_then_repeat<N, F, R>(mut self, mut count: N, f: F) -> Self
