@@ -20,7 +20,8 @@
     missing_docs,
     unsafe_code,
     clippy::all,
-    clippy::pedantic
+    clippy::pedantic,
+    clippy::cargo
 )]
 
 mod match_result;
