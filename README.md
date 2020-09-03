@@ -9,3 +9,6 @@ The use of unsafe code is forbidden within the library in order to provide purel
     * This feature provides interfaces that use the standard library. E.g.: `CollectingMatch`.
 	* Opting-out this feature will make the library use just the `libcore` while limiting functionality.
     * This feature is turned on by default.
+* `no_track_caller`
+    * Disables the `#[track_caller]` attributes within the library.
+    * This is required for compilation below version 1.46 of Rust.
