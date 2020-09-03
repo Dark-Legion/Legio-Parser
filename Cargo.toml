@@ -2,8 +2,9 @@
 name = "legio-parser"
 description = "Parsing library that uses combinatory logic."
 license = "APACHE"
+license-file = "LICENSE"
 version = "0.1.0"
-authors = ["Dark-Legion <Kiril195@hotmail.com>"]
+authors = ["Kiril Mihaylov <Kiril195@hotmail.com>"]
 edition = "2018"
 
 [features]
