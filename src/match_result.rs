@@ -4,6 +4,7 @@ pub struct MatchFailed(());
 
 /// Generic type that holds result of pattern matching.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use]
 pub struct SuccessfulMatch<T> {
     index: usize,
     matched: T,
@@ -132,6 +133,7 @@ impl<T> SuccessfulMatch<T> {
 
 /// Generic type that holds result of pattern matching.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use]
 pub struct Match<T> {
     matched: Option<SuccessfulMatch<T>>,
 }
@@ -145,7 +147,6 @@ impl<T> Match<T> {
     }
 
     /// Constructs a new "failed" instance.
-    #[must_use]
     pub fn failed() -> Self {
         Self { matched: None }
     }
@@ -319,6 +320,7 @@ impl<'a, T> From<Result<SuccessfulMatch<T>, MatchFailed>> for Match<T> {
 /// This functionality is available only with the `std` feature.
 #[cfg(feature = "std")]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use]
 pub struct CollectingMatch<T>
 where
     T: Clone,
@@ -333,7 +335,6 @@ where
     T: Clone,
 {
     /// Constructs a new "failed" instance.
-    #[must_use]
     pub fn failed() -> Self {
         Self {
             matches: Vec::new(),

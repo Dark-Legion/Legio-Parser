@@ -1,7 +1,8 @@
 use crate::*;
 
 fn match_with_test(data: &[u8]) {
-    data.match_static(b"#")
+    let _ = data
+        .match_static(b"#")
         .and_then(|_, _, rest: &[u8]| {
             rest.match_exact_with(6, |x: u8| x.is_ascii() && (x as char).is_numeric())
         })
@@ -20,7 +21,8 @@ fn match_with_panic() {
 }
 
 fn match_with_str_test(data: &str) {
-    data.match_static("#")
+    let _ = data
+        .match_static("#")
         .and_then(|_, _, rest: &str| {
             rest.match_exact_with(6, |c: char| c.is_ascii() && c.is_numeric())
         })
