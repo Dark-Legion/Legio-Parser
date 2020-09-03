@@ -14,5 +14,6 @@ edition = "2018"
 default = ["std"]
 
 std = []
+no_track_caller = []
 
 [dependencies]

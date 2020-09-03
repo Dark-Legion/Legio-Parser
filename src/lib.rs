@@ -12,6 +12,9 @@
 //!     * Provides interfaces for pattern matching that use the standard library.
 //!     * Opt-out of this feature to use limited version relying only on `libcore`.
 //!     * **Note**: Opting-out will limit some functionalities.
+//! * `no_track_caller`
+//!     * Disables the `#[track_caller]` attributes within the library.
+//!     * This is required for compilation below version 1.46 of Rust.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(

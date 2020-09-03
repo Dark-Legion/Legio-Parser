@@ -197,7 +197,7 @@ impl<T> Match<T> {
     /// This is a short-hand for `to_successful().unwrap()`.
     /// # Panics
     /// This function panics, if the `is_failed` function indicates an "failed" one.
-    #[track_caller]
+    #[cfg_attr(not(feature = "no_track_caller"), track_caller)]
     pub fn unwrap(self) -> SuccessfulMatch<T> {
         self.matched.unwrap()
     }
@@ -206,7 +206,7 @@ impl<T> Match<T> {
     /// This is a short-hand for `to_successful().expect("...")`.
     /// # Panics
     /// This function panics, if the `is_failed` function indicates an "failed" one.
-    #[track_caller]
+    #[cfg_attr(not(feature = "no_track_caller"), track_caller)]
     pub fn expect(self, msg: &str) -> SuccessfulMatch<T> {
         self.matched.expect(msg)
     }
@@ -369,7 +369,7 @@ where
     /// This is a short-hand for `finalize().unwrap()`.
     /// # Panics
     /// This function panics, if the `is_failed` function indicates an "failed" one.
-    #[track_caller]
+    #[cfg_attr(not(feature = "no_track_caller"), track_caller)]
     pub fn unwrap(self) -> (Vec<(usize, T)>, T) {
         self.finalize().unwrap()
     }
@@ -378,7 +378,7 @@ where
     /// This is a short-hand for `finalize().expect("...")`.
     /// # Panics
     /// This function panics, if the `is_failed` function indicates an "failed" one.
-    #[track_caller]
+    #[cfg_attr(not(feature = "no_track_caller"), track_caller)]
     pub fn expect(self, msg: &str) -> (Vec<(usize, T)>, T) {
         self.finalize().expect(msg)
     }
