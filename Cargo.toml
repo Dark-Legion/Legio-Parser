@@ -1,7 +1,6 @@
 [package]
 name = "legio-parser"
 description = "Parsing library that uses combinatory logic."
-license = "APACHE"
 license-file = "LICENSE"
 readme = "README.md"
 keywords = ["parser", "parsing"]
