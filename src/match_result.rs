@@ -1,3 +1,5 @@
+use crate::{MatchStatic, MatchWith, MatchWithInRange};
+
 /// Represents failed pattern matching result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct MatchFailed(());
@@ -181,6 +183,45 @@ impl<T> SuccessfulMatch<T> {
         T: Clone,
     {
         CollectingMatch::from(self)
+    }
+}
+
+impl<'object, E, T, R, U> MatchStatic<'object, E, T, R> for SuccessfulMatch<U>
+where
+    U: MatchStatic<'object, E, T, R>,
+{
+    fn match_static(&'object self, pattern: T) -> Match<R> {
+        self.rest.match_static(pattern)
+    }
+}
+
+impl<'object, E, F, R, U> MatchWith<'object, E, F, R> for SuccessfulMatch<U>
+where
+    U: MatchWith<'object, E, F, R>,
+{
+    fn match_with(&'object self, pattern: F) -> Match<R> {
+        self.rest.match_with(pattern)
+    }
+}
+
+impl<'object, E, N, F, R, U> MatchWithInRange<'object, E, N, F, R> for SuccessfulMatch<U>
+where
+    U: MatchWithInRange<'object, E, N, F, R>,
+{
+    fn match_min_with(&'object self, minimum: N, pattern: F) -> Match<R> {
+        self.rest.match_min_with(minimum, pattern)
+    }
+
+    fn match_max_with(&'object self, maximum: N, pattern: F) -> Match<R> {
+        self.rest.match_max_with(maximum, pattern)
+    }
+
+    fn match_min_max_with(&'object self, minimum: N, maximum: N, pattern: F) -> Match<R> {
+        self.rest.match_min_max_with(minimum, maximum, pattern)
+    }
+
+    fn match_exact_with(&'object self, count: N, pattern: F) -> Match<R> {
+        self.rest.match_exact_with(count, pattern)
     }
 }
 
@@ -377,6 +418,69 @@ impl<T> Match<T> {
         T: Clone,
     {
         CollectingMatch::from(self)
+    }
+}
+
+impl<'object, E, T, R, U> MatchStatic<'object, E, T, R> for Match<U>
+where
+    U: MatchStatic<'object, E, T, R>,
+{
+    fn match_static(&'object self, pattern: T) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_static(pattern)
+        } else {
+            Match::failed()
+        }
+    }
+}
+
+impl<'object, E, F, R, U> MatchWith<'object, E, F, R> for Match<U>
+where
+    U: MatchWith<'object, E, F, R>,
+{
+    fn match_with(&'object self, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_with(pattern)
+        } else {
+            Match::failed()
+        }
+    }
+}
+
+impl<'object, E, N, F, R, U> MatchWithInRange<'object, E, N, F, R> for Match<U>
+where
+    U: MatchWithInRange<'object, E, N, F, R>,
+{
+    fn match_min_with(&'object self, minimum: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_min_with(minimum, pattern)
+        } else {
+            Match::failed()
+        }
+    }
+
+    fn match_max_with(&'object self, maximum: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_max_with(maximum, pattern)
+        } else {
+            Match::failed()
+        }
+    }
+
+    fn match_min_max_with(&'object self, minimum: N, maximum: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_min_max_with(minimum, maximum, pattern)
+        } else {
+            Match::failed()
+        }
+    }
+
+    fn match_exact_with(&'object self, count: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_exact_with(count, pattern)
+        } else {
+            Match::failed()
+        }
     }
 }
 
