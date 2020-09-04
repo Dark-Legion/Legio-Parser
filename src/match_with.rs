@@ -1,4 +1,4 @@
-use crate::{SuccessfulMatch, Match};
+use crate::{Match, SuccessfulMatch};
 
 /// Provides interface for matching single "dynamic" pattern.
 /// This is a counter part of [`MatchStatic`].
