@@ -1,4 +1,4 @@
-use crate::{MatchStatic, MatchWith, MatchWithInRange};
+use crate::{MatchStatic, MatchStaticMultiple, MatchWith, MatchWithInRange};
 
 /// Represents failed pattern matching result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -192,6 +192,15 @@ where
 {
     fn match_static(&'object self, pattern: T) -> Match<R> {
         self.rest.match_static(pattern)
+    }
+}
+
+impl<'object, E, T, R, U> MatchStaticMultiple<'object, E, T, R> for SuccessfulMatch<U>
+where
+    U: MatchStaticMultiple<'object, E, T, R>,
+{
+    fn match_static_multiple(&'object self, pattern: T) -> Match<R> {
+        self.rest.match_static_multiple(pattern)
     }
 }
 
@@ -428,6 +437,19 @@ where
     fn match_static(&'object self, pattern: T) -> Match<R> {
         if let Some(matched) = &self.matched {
             matched.rest.match_static(pattern)
+        } else {
+            Match::failed()
+        }
+    }
+}
+
+impl<'object, E, T, R, U> MatchStaticMultiple<'object, E, T, R> for Match<U>
+where
+    U: MatchStaticMultiple<'object, E, T, R>,
+{
+    fn match_static_multiple(&'object self, pattern: T) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_static_multiple(pattern)
         } else {
             Match::failed()
         }
