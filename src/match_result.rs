@@ -1,9 +1,12 @@
+use crate::{MatchStatic, MatchStaticMultiple, MatchWith, MatchWithInRange};
+
 /// Represents failed pattern matching result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct MatchFailed(());
 
 /// Generic type that holds result of pattern matching.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use]
 pub struct SuccessfulMatch<T> {
     index: usize,
     matched: T,
@@ -44,78 +47,82 @@ impl<T> SuccessfulMatch<T> {
         (self.index, self.matched, self.rest)
     }
 
-    /// Analogue to `Option` and `Result`'s method `and_then`.
-    pub fn and_then<F, R>(self, f: F) -> Match<T>
+    /// Asserts that a certain condition is met.
+    /// The "matched" and "rest" parts are passed by reference while the index is passed by value.
+    pub fn assert<F>(self, f: F) -> Match<T>
     where
-        F: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
+        F: FnOnce(usize, &T, &T) -> bool,
     {
-        f(self.index, self.matched, self.rest).into()
-    }
-
-    /// Analogue to `Option` and `Result`'s method `and_then`.
-    ///
-    /// This method is analogue to `and_then` but return type is non-failing.
-    pub fn and_then_non_failing<F>(self, f: F) -> Self
-    where
-        F: FnOnce(usize, T, T) -> Self,
-    {
-        f(self.index, self.matched, self.rest)
-    }
-
-    /// Analogue to the `and_then` method but adds a condition.
-    /// When the condition is met, the progression function is executed.
-    /// Otherwise, match fails.
-    pub fn and_then_if<F1, F2, R>(self, condition: F1, f: F2) -> Match<T>
-    where
-        F1: FnOnce(usize, &T, &T) -> bool,
-        F2: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
-    {
-        if condition(self.index, self.matched(), self.rest()) {
-            f(self.index, self.matched, self.rest).into()
+        if f(self.index, self.matched(), self.rest()) {
+            self.into()
         } else {
             Match::failed()
         }
     }
 
-    /// Analogue to the `and_then` method but adds a condition.
-    /// When the condition is met, the first progression function is executed.
-    /// Otherwise, the second progression function is executed.
-    pub fn and_then_if_else<FC, FT, RT, FF, RF>(
-        self,
-        condition: FC,
-        f_true: FT,
-        f_false: FF,
-    ) -> Match<T>
+    /// Executes the passed function unconditionally.
+    /// The "matched" and "rest" parts are passed by reference while the index is passed by value.
+    pub fn execute<F>(self, f: F) -> Self
     where
-        FC: FnOnce(usize, &T, &T) -> bool,
-        FT: FnOnce(usize, T, T) -> RT,
-        RT: Into<Match<T>>,
-        FF: FnOnce(usize, T, T) -> RF,
-        RF: Into<Match<T>>,
+        for<'context> F: FnOnce(usize, &'context T, &'context T),
     {
-        if condition(self.index, self.matched(), self.rest()) {
-            f_true(self.index, self.matched, self.rest).into()
-        } else {
-            f_false(self.index, self.matched, self.rest).into()
-        }
+        f(self.index, self.matched(), self.rest());
+
+        self
     }
 
-    /// Analogue to the `and_then` method but adds a condition.
-    /// When the condition is met, the first progression function is executed.
-    /// Otherwise, the match on which the method was called is returned.
-    pub fn and_then_if_else_self<FC, F, R>(self, condition: FC, f: F) -> Match<T>
+    /// Analogue to the `and_then` method but retains the original match index and value while returning a new "rest" part.
+    pub fn discarding<F, R>(self, f: F) -> Match<T>
     where
-        FC: FnOnce(usize, &T, &T) -> bool,
+        T: Clone,
         F: FnOnce(usize, T, T) -> R,
         R: Into<Match<T>>,
     {
-        if condition(self.index, self.matched(), self.rest()) {
-            f(self.index, self.matched, self.rest).into()
+        if let Ok((_, _, rest)) =
+            Into::<Match<T>>::into(f(self.index, self.matched.clone(), self.rest)).take()
+        {
+            Self::new(self.index, self.matched, rest).into()
         } else {
-            self.into()
+            Match::failed()
         }
+    }
+
+    /// Non-failing variant of the `discarding` method.
+    pub fn discarding_non_failing<F, R>(self, f: F) -> Self
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Self>,
+    {
+        let rest: T = Into::<Self>::into(f(self.index, self.matched.clone(), self.rest)).rest;
+
+        Self::new(self.index, self.matched, rest)
+    }
+
+    /// Analogue to the `discarding` method but the "matched" part is passed by reference.
+    pub fn discarding_ref<F, R>(self, f: F) -> Match<T>
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        if let Ok((_, _, rest)) =
+            Into::<Match<T>>::into(f(self.index, &self.matched, self.rest)).take()
+        {
+            Self::new(self.index, self.matched, rest).into()
+        } else {
+            Match::failed()
+        }
+    }
+
+    /// Non-failing variant of the `discarding_ref` method.
+    pub fn discarding_ref_non_failing<F, R>(self, f: F) -> Self
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Self>,
+    {
+        let rest: T = Into::<Self>::into(f(self.index, &self.matched, self.rest)).rest;
+
+        Self::new(self.index, self.matched, rest)
     }
 
     /// Converts current match into a sequence one.
@@ -130,8 +137,57 @@ impl<T> SuccessfulMatch<T> {
     }
 }
 
+impl<'object, E, T, R, U> MatchStatic<'object, E, T, R> for SuccessfulMatch<U>
+where
+    U: MatchStatic<'object, E, T, R>,
+{
+    fn match_static(&'object self, pattern: T) -> Match<R> {
+        self.rest.match_static(pattern)
+    }
+}
+
+impl<'object, E, T, R, U> MatchStaticMultiple<'object, E, T, R> for SuccessfulMatch<U>
+where
+    U: MatchStaticMultiple<'object, E, T, R>,
+{
+    fn match_static_multiple(&'object self, pattern: T) -> Match<R> {
+        self.rest.match_static_multiple(pattern)
+    }
+}
+
+impl<'object, E, F, R, U> MatchWith<'object, E, F, R> for SuccessfulMatch<U>
+where
+    U: MatchWith<'object, E, F, R>,
+{
+    fn match_with(&'object self, pattern: F) -> Match<R> {
+        self.rest.match_with(pattern)
+    }
+}
+
+impl<'object, E, N, F, R, U> MatchWithInRange<'object, E, N, F, R> for SuccessfulMatch<U>
+where
+    U: MatchWithInRange<'object, E, N, F, R>,
+{
+    fn match_min_with(&'object self, minimum: N, pattern: F) -> Match<R> {
+        self.rest.match_min_with(minimum, pattern)
+    }
+
+    fn match_max_with(&'object self, maximum: N, pattern: F) -> Match<R> {
+        self.rest.match_max_with(maximum, pattern)
+    }
+
+    fn match_min_max_with(&'object self, minimum: N, maximum: N, pattern: F) -> Match<R> {
+        self.rest.match_min_max_with(minimum, maximum, pattern)
+    }
+
+    fn match_exact_with(&'object self, count: N, pattern: F) -> Match<R> {
+        self.rest.match_exact_with(count, pattern)
+    }
+}
+
 /// Generic type that holds result of pattern matching.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use]
 pub struct Match<T> {
     matched: Option<SuccessfulMatch<T>>,
 }
@@ -145,7 +201,6 @@ impl<T> Match<T> {
     }
 
     /// Constructs a new "failed" instance.
-    #[must_use]
     pub fn failed() -> Self {
         Self { matched: None }
     }
@@ -211,78 +266,63 @@ impl<T> Match<T> {
         self.matched.expect(msg)
     }
 
-    /// Analogue to `Option` and `Result`'s method `and_then`.
-    /// This method takes one function with two parameters.
-    /// The first parameter of the function is the matched value.
-    /// The second parameter of the function is the rest of the original value.
-    /// The function has to return a match with the same argument type as the object it is
-    /// called on and with the exception that the lifetime parameter can be smaller or equal.
-    pub fn and_then<F, R>(self, f: F) -> Self
+    /// Asserts that a certain condition is met.
+    /// The "matched" and "rest" parts are passed by reference while the index is passed by value.
+    pub fn assert<F>(self, f: F) -> Self
     where
-        F: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
+        for<'context> F: FnOnce(usize, &'context T, &'context T) -> bool,
     {
-        if let Some(matched) = self.matched {
-            let (index, matched, rest): (usize, T, T) = matched.take();
+        if let Some(matched) = &self.matched {
+            if f(matched.index, matched.matched(), matched.rest()) {
+                self
+            } else {
+                Self::failed()
+            }
+        } else {
+            self
+        }
+    }
 
-            f(index, matched, rest).into()
+    /// Executes the passed function, if matching hasn't failed.
+    /// The "matched" and "rest" parts are passed by reference while the index is passed by value.
+    /// This method returns the match result unchanged.
+    pub fn execute<F>(self, f: F) -> Self
+    where
+        for<'context> F: FnOnce(usize, &'context T, &'context T),
+    {
+        if let Some(matched) = &self.matched {
+            f(matched.index, matched.matched(), matched.rest());
+
+            self
+        } else {
+            self
+        }
+    }
+
+    /// Analogue to the `and_then` method but retains the original match index and value while returning a new "rest" part.
+    pub fn discarding<F, R>(self, f: F) -> Self
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Self>,
+    {
+        if let Ok(matched) = self.into_successful() {
+            matched.discarding(f)
         } else {
             Self::failed()
         }
     }
 
-    /// Analogue to the `and_then` method but adds a condition.
-    /// When the condition is met, the progression function is executed.
-    /// Otherwise, match fails.
-    pub fn and_then_if<F1, F2, R>(self, condition: F1, f: F2) -> Match<T>
+    /// Analogue to the `discarding` method but the "matched" part is passed by reference.
+    pub fn discarding_ref<F, R>(self, f: F) -> Self
     where
-        F1: FnOnce(usize, &T, &T) -> bool,
-        F2: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Self>,
     {
         if let Ok(matched) = self.into_successful() {
-            matched.and_then_if(condition, f)
+            matched.discarding_ref(f)
         } else {
-            Match::failed()
-        }
-    }
-
-    /// Analogue to the `and_then` method but adds a condition.
-    /// When the condition is met, the first progression function is executed.
-    /// Otherwise, the second progression function is executed.
-    pub fn and_then_if_else<FC, FT, RT, FF, RF>(
-        self,
-        condition: FC,
-        f_true: FT,
-        f_false: FF,
-    ) -> Match<T>
-    where
-        FC: FnOnce(usize, &T, &T) -> bool,
-        FT: FnOnce(usize, T, T) -> RT,
-        RT: Into<Match<T>>,
-        FF: FnOnce(usize, T, T) -> RF,
-        RF: Into<Match<T>>,
-    {
-        if let Ok(matched) = self.into_successful() {
-            matched.and_then_if_else(condition, f_true, f_false)
-        } else {
-            Match::failed()
-        }
-    }
-
-    /// Analogue to the `and_then` method but adds a condition.
-    /// When the condition is met, the first progression function is executed.
-    /// Otherwise, the match on which the method was called is returned.
-    pub fn and_then_if_else_self<FC, F, R>(self, condition: FC, f: F) -> Match<T>
-    where
-        FC: FnOnce(usize, &T, &T) -> bool,
-        F: FnOnce(usize, T, T) -> R,
-        R: Into<Match<T>>,
-    {
-        if let Ok(matched) = self.into_successful() {
-            matched.and_then_if_else_self(condition, f)
-        } else {
-            Match::failed()
+            Self::failed()
         }
     }
 
@@ -295,6 +335,82 @@ impl<T> Match<T> {
         T: Clone,
     {
         CollectingMatch::from(self)
+    }
+}
+
+impl<'object, E, T, R, U> MatchStatic<'object, E, T, R> for Match<U>
+where
+    U: MatchStatic<'object, E, T, R>,
+{
+    fn match_static(&'object self, pattern: T) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_static(pattern)
+        } else {
+            Match::failed()
+        }
+    }
+}
+
+impl<'object, E, T, R, U> MatchStaticMultiple<'object, E, T, R> for Match<U>
+where
+    U: MatchStaticMultiple<'object, E, T, R>,
+{
+    fn match_static_multiple(&'object self, pattern: T) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_static_multiple(pattern)
+        } else {
+            Match::failed()
+        }
+    }
+}
+
+impl<'object, E, F, R, U> MatchWith<'object, E, F, R> for Match<U>
+where
+    U: MatchWith<'object, E, F, R>,
+{
+    fn match_with(&'object self, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_with(pattern)
+        } else {
+            Match::failed()
+        }
+    }
+}
+
+impl<'object, E, N, F, R, U> MatchWithInRange<'object, E, N, F, R> for Match<U>
+where
+    U: MatchWithInRange<'object, E, N, F, R>,
+{
+    fn match_min_with(&'object self, minimum: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_min_with(minimum, pattern)
+        } else {
+            Match::failed()
+        }
+    }
+
+    fn match_max_with(&'object self, maximum: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_max_with(maximum, pattern)
+        } else {
+            Match::failed()
+        }
+    }
+
+    fn match_min_max_with(&'object self, minimum: N, maximum: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_min_max_with(minimum, maximum, pattern)
+        } else {
+            Match::failed()
+        }
+    }
+
+    fn match_exact_with(&'object self, count: N, pattern: F) -> Match<R> {
+        if let Some(matched) = &self.matched {
+            matched.rest.match_exact_with(count, pattern)
+        } else {
+            Match::failed()
+        }
     }
 }
 
@@ -319,6 +435,7 @@ impl<'a, T> From<Result<SuccessfulMatch<T>, MatchFailed>> for Match<T> {
 /// This functionality is available only with the `std` feature.
 #[cfg(feature = "std")]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use]
 pub struct CollectingMatch<T>
 where
     T: Clone,
@@ -333,7 +450,6 @@ where
     T: Clone,
 {
     /// Constructs a new "failed" instance.
-    #[must_use]
     pub fn failed() -> Self {
         Self {
             matches: Vec::new(),
@@ -383,57 +499,92 @@ where
         self.finalize().expect(msg)
     }
 
-    /// Analogue to `Option` and `Result`'s method `and_then`.
-    /// This method takes one function with two parameters.
-    /// The first parameter of the function is the matched value.
-    /// The second parameter of the function is the rest of the original value.
-    /// The function has to return a match with the same argument type as the object it is
-    /// called on and with the exception that the lifetime parameter can be smaller or equal.
-    pub fn and_then<F, R>(self, f: F) -> Self
+    /// Asserts that a certain condition is met.
+    /// The "matched" and "rest" parts are passed by reference while the index is passed by value.
+    pub fn assert<F>(mut self, f: F) -> Self
+    where
+        for<'context> F: FnOnce(usize, &'context T, &'context T) -> bool,
+    {
+        self.last_match = self.last_match.assert(f);
+
+        if self.is_failed() {
+            Self::failed()
+        } else {
+            self
+        }
+    }
+
+    /// Executes the passed function, if matching hasn't failed.
+    /// The "matched" and "rest" parts are passed by reference while the index is passed by value.
+    pub fn execute<F>(mut self, f: F) -> Self
+    where
+        for<'context> F: FnOnce(usize, &'context T, &'context T),
+    {
+        self.last_match = self.last_match.execute(f);
+
+        self
+    }
+
+    /// Executes the matching function once
+    pub fn single<F, R>(mut self, f: F) -> Self
     where
         F: FnOnce(usize, T, T) -> R,
         R: Into<Match<T>>,
     {
-        if let Ok((index, matched, _)) = self.last_match.clone().take() {
-            let mut matches: Vec<(usize, T)> = self.matches;
+        if let Some(matched) = self.last_match.matched {
+            self.matches.push((matched.index, matched.matched.clone()));
 
-            matches.push((index, matched));
+            self.last_match = f(matched.index, matched.matched, matched.rest).into();
 
-            Self {
-                matches,
-                last_match: self.last_match.and_then(f),
-            }
+            self
         } else {
-            Self {
-                matches: Vec::new(),
-                last_match: Match::failed(),
-            }
+            self
         }
     }
 
-    /// Analogue to `Option` and `Result`'s method `and_then`.
-    /// This method takes one function with two parameters.
-    /// The first parameter of the function is the matched value.
-    /// The second parameter of the function is the rest of the original value.
-    /// The function has to return a match with the same argument type as the object it is
-    /// called on and with the exception that the lifetime parameter can be smaller or equal.
-    pub fn and_then_repeat<N, F, R>(mut self, mut count: N, f: F) -> Self
+    /// Executes the matching function `count` times unless matching has failed.
+    pub fn repeat<N, F, R>(mut self, mut count: N, f: F) -> Self
     where
         N: PartialEq<usize> + core::ops::SubAssign<usize>,
-        F: Fn(usize, T, T) -> R,
+        F: FnMut(usize, T, T) -> R + Clone,
         R: Into<Match<T>>,
     {
-        while !self.is_failed() && count != 0 {
-            self = self.and_then(&f);
+        loop {
+            if count == 0 {
+                break self;
+            }
+
+            if self.is_failed() {
+                break self;
+            }
+
+            self = self.single(f.clone());
 
             count -= 1;
         }
+    }
 
-        if count == 0 {
-            self
-        } else {
-            Self::failed()
-        }
+    /// Analogue to the `and_then` method but retains the original match index and value while returning a new "rest" part.
+    pub fn discarding<F, R>(mut self, f: F) -> Self
+    where
+        T: Clone,
+        F: FnOnce(usize, T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        self.last_match = self.last_match.discarding(f);
+
+        self
+    }
+
+    /// Analogue to the `discarding` method but the "matched" part is passed by reference.
+    pub fn discarding_ref<F, R>(mut self, f: F) -> Self
+    where
+        F: FnOnce(usize, &T, T) -> R,
+        R: Into<Match<T>>,
+    {
+        self.last_match = self.last_match.discarding_ref(f);
+
+        self
     }
 }
 
