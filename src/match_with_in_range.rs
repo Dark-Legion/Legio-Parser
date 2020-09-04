@@ -38,7 +38,7 @@ pub trait MatchWithInRange<'object, E, N, F, R> {
     fn match_min_with(&'object self, minimum: N, pattern: F) -> Match<R>;
 
     /// Matches a "dynamic" pattern by taking a function instead with taking into account a maximum amount.
-    fn match_max_with(&'object self, maximum: N, pattern: F) -> SuccessfulMatch<R>;
+    fn match_max_with(&'object self, maximum: N, pattern: F) -> Match<R>;
 
     /// Matches a "dynamic" pattern by taking a function instead with taking into account a minimum and maximum amount.
     fn match_min_max_with(&'object self, minimum: N, maximum: N, pattern: F) -> Match<R>;
@@ -58,22 +58,28 @@ where
             return Match::failed();
         }
 
-        let matched: SuccessfulMatch<&'object Self> = self.match_with(pattern);
-
-        if minimum <= matched.matched().length() {
-            matched.into()
+        if let Ok(matched) = self.match_with(pattern).into_successful() {
+            if minimum <= matched.matched().length() {
+                matched.into()
+            } else {
+                Match::failed()
+            }
         } else {
             Match::failed()
         }
     }
 
-    fn match_max_with(&'object self, maximum: N, pattern: F) -> SuccessfulMatch<&'object Self> {
+    fn match_max_with(&'object self, maximum: N, pattern: F) -> Match<&'object Self> {
         if maximum <= self.length() {
-            SuccessfulMatch::new(
-                0,
-                self[..maximum.clone()].match_with(pattern).take().1,
-                &self[maximum..],
-            )
+            if let Ok((_, matched, _)) = self[..maximum.clone()].match_with(pattern).take() {
+                SuccessfulMatch::new(
+                    0,
+                    matched,
+                    &self[maximum..],
+                ).into()
+            } else {
+                Match::failed()
+            }
         } else {
             self.match_with(pattern)
         }
