@@ -44,3 +44,21 @@ impl<'object, 'pattern> MatchStatic<'object, char, &'pattern Self, &'object Self
         }
     }
 }
+
+impl<'object, E, T, R, I> MatchStatic<'object, E, T, R> for &I
+where
+    I: MatchStatic<'object, E, T, R> + ?Sized,
+{
+    fn match_static(&'object self, pattern: T) -> Match<R> {
+        (**self).match_static(pattern)
+    }
+}
+
+impl<'object, E, T, R, I> MatchStatic<'object, E, T, R> for &mut I
+where
+    I: MatchStatic<'object, E, T, R> + ?Sized,
+{
+    fn match_static(&'object self, pattern: T) -> Match<R> {
+        (**self).match_static(pattern)
+    }
+}

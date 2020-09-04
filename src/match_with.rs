@@ -69,3 +69,21 @@ where
         SuccessfulMatch::new(0, self, "")
     }
 }
+
+impl<'object, E, F, R, I> MatchWith<'object, E, F, R> for &I
+where
+    I: MatchWith<'object, E, F, R> + ?Sized,
+{
+    fn match_with(&'object self, pattern: F) -> SuccessfulMatch<R> {
+        (**self).match_with(pattern)
+    }
+}
+
+impl<'object, E, F, R, I> MatchWith<'object, E, F, R> for &mut I
+where
+    I: MatchWith<'object, E, F, R> + ?Sized,
+{
+    fn match_with(&'object self, pattern: F) -> SuccessfulMatch<R> {
+        (**self).match_with(pattern)
+    }
+}
