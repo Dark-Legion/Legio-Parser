@@ -1,27 +1,27 @@
-use crate::{Match, SuccessfulMatch};
+use crate::Match;
 
 /// Provides interface for matching single "static" pattern.
 /// "Static" in this case is rather "not dynamic" (not changing) during the call, than constant.
-pub trait MatchStatic<'object, E, T, R> {
+pub trait MatchStatic<E, T, R>: Sized {
     /// Matches a "static" pattern.
-    fn match_static(&'object self, pattern: T) -> Match<R>;
+    fn match_static(self, pattern: T) -> Match<R>;
 }
 
-impl<'object, E, T> MatchStatic<'object, E, T, &'object Self> for [E]
+impl<E, T> MatchStatic<E, T, Self> for &[E]
 where
     E: PartialEq,
     T: AsRef<[E]>,
 {
-    fn match_static(&'object self, pattern: T) -> Match<&'object Self> {
+    fn match_static(self, pattern: T) -> Match<Self> {
         let pattern: &[E] = pattern.as_ref();
 
         if pattern.is_empty() {
-            return SuccessfulMatch::<&'object Self>::new(0, &self[..0], self).into();
+            return Match::<Self>::new(Some(&self[..0]), &self);
         }
 
         if pattern.len() <= self.len() {
             if &self[..pattern.len()] == pattern {
-                SuccessfulMatch::new(0, &self[..pattern.len()], &self[pattern.len()..]).into()
+                Match::new(Some(&self[..pattern.len()]), &self[pattern.len()..])
             } else {
                 Match::failed()
             }
@@ -31,11 +31,16 @@ where
     }
 }
 
-impl<'object, 'pattern> MatchStatic<'object, char, &'pattern Self, &'object Self> for str {
-    fn match_static(&'object self, pattern: &'pattern Self) -> Match<&'object Self> {
+impl<T> MatchStatic<char, T, Self> for &str
+where
+    T: AsRef<str>,
+{
+    fn match_static(self, pattern: T) -> Match<Self> {
+        let pattern: &str = pattern.as_ref();
+
         if pattern.len() <= self.len() {
             if &self[..pattern.len()] == pattern {
-                SuccessfulMatch::new(0, &self[..pattern.len()], &self[pattern.len()..]).into()
+                Match::new(Some(&self[..pattern.len()]), &self[pattern.len()..])
             } else {
                 Match::failed()
             }
@@ -45,20 +50,12 @@ impl<'object, 'pattern> MatchStatic<'object, char, &'pattern Self, &'object Self
     }
 }
 
-impl<'object, E, T, R, I> MatchStatic<'object, E, T, R> for &I
+impl<E, T, R, I> MatchStatic<E, T, R> for &mut I
 where
-    I: MatchStatic<'object, E, T, R> + ?Sized,
+    I: ?Sized,
+    for<'r> &'r I: MatchStatic<E, T, R>,
 {
-    fn match_static(&'object self, pattern: T) -> Match<R> {
-        (**self).match_static(pattern)
-    }
-}
-
-impl<'object, E, T, R, I> MatchStatic<'object, E, T, R> for &mut I
-where
-    I: MatchStatic<'object, E, T, R> + ?Sized,
-{
-    fn match_static(&'object self, pattern: T) -> Match<R> {
-        (**self).match_static(pattern)
+    fn match_static(self, pattern: T) -> Match<R> {
+        (&*self).match_static(pattern)
     }
 }
