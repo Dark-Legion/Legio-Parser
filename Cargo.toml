@@ -6,7 +6,7 @@ readme = "README.md"
 keywords = ["parser", "parsing"]
 categories = ["Parsing"]
 repository = "https://github.com/Dark-Legion/Legio-Parser"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Kiril Mihaylov <Kiril195@hotmail.com>"]
 edition = "2018"
 

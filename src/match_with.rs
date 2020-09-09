@@ -1,89 +1,80 @@
-use crate::{Match, SuccessfulMatch};
+use crate::Match;
 
 /// Provides interface for matching single "dynamic" pattern.
 /// This is a counter part of [`MatchStatic`].
 ///
 /// [`MatchStatic`]: trait.MatchStatic.html
-pub trait MatchWith<'object, E, F, R> {
+pub trait MatchWith<E, F, R>: Sized {
     /// Matches a "dynamic" pattern by taking a function instead.
-    fn match_with(&'object self, pattern: F) -> Match<R>;
+    fn match_with(self, pattern: F) -> Match<R>;
 }
 
-impl<'object, E, F> MatchWith<'object, E, F, &'object Self> for [E]
+impl<E, F> MatchWith<E, F, Self> for &[E]
 where
     E: Clone,
     F: FnMut(E) -> bool,
 {
-    fn match_with(&'object self, mut pattern: F) -> Match<&'object Self> {
+    fn match_with(self, mut pattern: F) -> Match<Self> {
         for (index, element) in self.iter().enumerate() {
             if !pattern(element.clone()) {
-                return SuccessfulMatch::new(0, &self[..index], &self[index..]).into();
+                return Match::new(Some(&self[..index]), &self[index..]);
             }
         }
 
-        SuccessfulMatch::new(0, self, &self[self.len()..]).into()
+        Match::new(Some(self), &self[self.len()..])
     }
 }
 
-impl<'object, E, F> MatchWith<'object, &E, F, &'object Self> for [E]
+impl<E, F> MatchWith<&E, F, Self> for &[E]
 where
     F: FnMut(&E) -> bool,
 {
-    fn match_with(&'object self, mut pattern: F) -> Match<&'object Self> {
+    fn match_with(self, mut pattern: F) -> Match<Self> {
         for (index, element) in self.iter().enumerate() {
             if !pattern(element) {
-                return SuccessfulMatch::new(0, &self[..index], &self[index..]).into();
+                return Match::new(Some(&self[..index]), &self[index..]);
             }
         }
 
-        SuccessfulMatch::new(0, self, &self[self.len()..]).into()
+        Match::new(Some(self), &self[self.len()..])
     }
 }
 
-impl<'object, F> MatchWith<'object, char, F, &'object Self> for str
+impl<F> MatchWith<char, F, Self> for &str
 where
     F: FnMut(char) -> bool,
 {
-    fn match_with(&'object self, mut pattern: F) -> Match<&'object Self> {
+    fn match_with(self, mut pattern: F) -> Match<Self> {
         for (index, element) in self.char_indices() {
             if !pattern(element) {
-                return SuccessfulMatch::new(0, &self[..index], &self[index..]).into();
+                return Match::new(Some(&self[..index]), &self[index..]);
             }
         }
 
-        SuccessfulMatch::new(0, self, &self[self.len()..]).into()
+        Match::new(Some(self), &self[self.len()..])
     }
 }
 
-impl<'object, F> MatchWith<'object, &char, F, &'object Self> for str
+impl<F> MatchWith<&char, F, Self> for &str
 where
     F: FnMut(&char) -> bool,
 {
-    fn match_with(&'object self, mut pattern: F) -> Match<&'object Self> {
+    fn match_with(self, mut pattern: F) -> Match<Self> {
         for (index, element) in self.char_indices() {
             if !pattern(&element) {
-                return SuccessfulMatch::new(0, &self[..index], &self[index..]).into();
+                return Match::new(Some(&self[..index]), &self[index..]);
             }
         }
 
-        SuccessfulMatch::new(0, self, &self[self.len()..]).into()
+        Match::new(Some(self), &self[self.len()..])
     }
 }
 
-impl<'object, E, F, R, I> MatchWith<'object, E, F, R> for &I
+impl<E, F, R, I> MatchWith<E, F, R> for &I
 where
-    I: MatchWith<'object, E, F, R> + ?Sized,
+    I: MatchWith<E, F, R> + Clone,
 {
-    fn match_with(&'object self, pattern: F) -> Match<R> {
-        (**self).match_with(pattern)
-    }
-}
-
-impl<'object, E, F, R, I> MatchWith<'object, E, F, R> for &mut I
-where
-    I: MatchWith<'object, E, F, R> + ?Sized,
-{
-    fn match_with(&'object self, pattern: F) -> Match<R> {
-        (**self).match_with(pattern)
+    fn match_with(self, pattern: F) -> Match<R> {
+        self.clone().match_with(pattern)
     }
 }

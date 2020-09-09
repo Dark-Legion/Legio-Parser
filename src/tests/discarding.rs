@@ -3,16 +3,16 @@ use crate::*;
 fn match_with_test(data: &[u8]) {
     let _ = data
         .match_static(b"#")
-        .execute(|_, &matched: &&[u8], _| assert_eq!(matched, b"#"))
+        .execute(|&matched: &Option<&[u8]>, _| assert_eq!(matched.unwrap(), b"#"))
         .match_exact_with(2, |x: u8| x.is_ascii() && (x as char).is_numeric())
-        .discarding(|_, _, rest: &[u8]| rest.match_with(|byte: u8| byte == b' '))
-        .execute(|_, &matched: &&[u8], _| assert_eq!(matched, b"12"))
+        .discarding(|_, rest: &[u8]| rest.match_with(|byte: u8| byte == b' '))
+        .execute(|&matched: &Option<&[u8]>, _| assert_eq!(matched.unwrap(), b"12"))
         .match_exact_with(2, |x: u8| x.is_ascii() && (x as char).is_numeric())
-        .discarding(|_, _, rest: &[u8]| rest.match_with(|byte: u8| byte == b' '))
-        .execute(|_, &matched: &&[u8], _| assert_eq!(matched, b"56"))
+        .discarding(|_, rest: &[u8]| rest.match_with(|byte: u8| byte == b' '))
+        .execute(|&matched: &Option<&[u8]>, _| assert_eq!(matched.unwrap(), b"56"))
         .match_exact_with(2, |x: u8| x.is_ascii() && (x as char).is_numeric())
-        .discarding(|_, _, rest: &[u8]| rest.match_with(|byte: u8| byte == b' '))
-        .execute(|_, &matched: &&[u8], _| assert_eq!(matched, b"78"))
+        .discarding(|_, rest: &[u8]| rest.match_with(|byte: u8| byte == b' '))
+        .execute(|&matched: &Option<&[u8]>, _| assert_eq!(matched.unwrap(), b"78"))
         .unwrap();
 }
 
@@ -30,16 +30,16 @@ fn match_with_panic() {
 fn match_with_str_test(data: &str) {
     let _ = data
         .match_static("#")
-        .execute(|_, &matched: &&str, _| assert_eq!(matched, "#"))
+        .execute(|&matched: &Option<&str>, _| assert_eq!(matched.unwrap(), "#"))
         .match_exact_with(2, |c: char| c.is_ascii() && c.is_numeric())
-        .discarding(|_, _, rest: &str| rest.match_with(|c: char| c.is_whitespace()))
-        .execute(|_, &matched: &&str, _| assert_eq!(matched, "12"))
+        .discarding(|_, rest: &str| rest.match_with(|c: char| c.is_whitespace()))
+        .execute(|&matched: &Option<&str>, _| assert_eq!(matched.unwrap(), "12"))
         .match_exact_with(2, |c: char| c.is_ascii() && c.is_numeric())
-        .discarding(|_, _, rest: &str| rest.match_with(|c: char| c.is_whitespace()))
-        .execute(|_, &matched: &&str, _| assert_eq!(matched, "56"))
+        .discarding(|_, rest: &str| rest.match_with(|c: char| c.is_whitespace()))
+        .execute(|&matched: &Option<&str>, _| assert_eq!(matched.unwrap(), "56"))
         .match_exact_with(2, |c: char| c.is_ascii() && c.is_numeric())
-        .discarding(|_, _, rest: &str| rest.match_with(|c: char| c.is_whitespace()))
-        .execute(|_, &matched: &&str, _| assert_eq!(matched, "78"))
+        .discarding(|_, rest: &str| rest.match_with(|c: char| c.is_whitespace()))
+        .execute(|&matched: &Option<&str>, _| assert_eq!(matched.unwrap(), "78"))
         .unwrap();
 }
 
