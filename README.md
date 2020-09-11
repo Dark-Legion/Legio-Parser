@@ -27,6 +27,12 @@ The use of unsafe code is forbidden within the library in order to provide purel
     branch = "release"
     ```
 * Variant 3 - Use specific version
+    
+    Write this under the `[dependancies]` section:
+    ```
+    legio-parser = { git = "https://github.com/Dark-Legion/Legio-Parser.git", tag = "v0.1" }
+    ```
+* Variant 4 - Use specific version
     ```
     [dependencies.legio-parser]
     git = "https://github.com/Dark-Legion/Legio-Parser.git"
