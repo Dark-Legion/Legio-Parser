@@ -1,4 +1,4 @@
-use crate::*;
+use crate::traits::*;
 
 fn match_static_test(data: &[u8]) {
     let _ = data

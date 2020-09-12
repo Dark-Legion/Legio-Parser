@@ -1,4 +1,4 @@
-use crate::*;
+use crate::traits::*;
 
 fn match_with_test(data: &[u8]) {
     let _ = data

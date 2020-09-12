@@ -1,8 +1,8 @@
-use crate::*;
+use crate::traits::*;
 
 fn match_alternatives_test(data: &[u8]) {
     let _ = data
-        .into_match()
+        .into_match::<&[u8]>()
         .alternatives()
         .add_path(|matched| matched.match_static(b"!"))
         .add_path(|matched| matched.match_static(b"@"))
@@ -39,7 +39,7 @@ fn match_alternatives_panic() {
 
 fn match_static_str_test(data: &str) {
     let _ = data
-        .into_match()
+        .into_match::<&str>()
         .alternatives()
         .add_path(|matched| matched.match_static("!"))
         .add_path(|matched| matched.match_static("@"))

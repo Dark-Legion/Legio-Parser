@@ -1,7 +1,8 @@
-use crate::*;
+use crate::traits::*;
 
 fn collecting_match_test(data: &[u8]) {
-    data.match_static(b"#")
+    let _ = data
+        .match_static(b"#")
         .into_collecting()
         .repeat(3, |_, rest: &[u8]| {
             rest.match_exact_with(2, |byte: u8| (byte as char).is_numeric())
@@ -22,7 +23,8 @@ fn collecting_match_panic() {
 }
 
 fn collecting_match_str_test(data: &str) {
-    data.match_static("#")
+    let _ = data
+        .match_static("#")
         .into_collecting()
         .repeat(3, |_, rest: &str| {
             rest.match_exact_with(2, |c: char| c.is_numeric())
@@ -43,7 +45,8 @@ fn collecting_match_str_panic() {
 }
 
 fn collecting_match_repeat_test(data: &[u8]) {
-    data.match_static(b"#")
+    let _ = data
+        .match_static(b"#")
         .into_collecting()
         .repeat(3, |_, rest: &[u8]| {
             rest.match_exact_with(2, |byte: u8| (byte as char).is_numeric())
@@ -64,7 +67,8 @@ fn collecting_match_repeat_panic() {
 }
 
 fn collecting_match_repeat_str_test(data: &str) {
-    data.match_static("#")
+    let _ = data
+        .match_static("#")
         .into_collecting()
         .repeat(3, |_, rest: &str| {
             rest.match_exact_with(2, |c: char| c.is_numeric())
