@@ -20,7 +20,7 @@
 #![forbid(
     warnings,
     unused,
-    // missing_docs,
+    missing_docs,
     unsafe_code,
     clippy::all,
     clippy::pedantic,
@@ -31,25 +31,13 @@
 ///
 /// Traits that are inaccessible are used only for implementations, leaving traits free for new implementations.
 pub mod prelude {
-    pub use crate::{
-        AlternativesMatch, IntoMatch, Match, MatchFailed, MatchStatic, MatchWith, MatchWithInRange,
-    };
+    pub use crate::result::{Match, MatchFailed};
+
+    pub use crate::traits::*;
 }
 
-mod match_result;
-pub use match_result::*;
-
-mod match_static;
-pub use match_static::*;
-
-mod match_with;
-pub use match_with::*;
-
-mod match_with_in_range;
-pub use match_with_in_range::*;
-
-mod into_match;
-pub use into_match::*;
+pub mod result;
+pub mod traits;
 
 #[cfg(test)]
 mod tests {
