@@ -37,7 +37,7 @@ fn match_alternatives_panic() {
     match_alternatives_test(b"#012340");
 }
 
-fn match_static_str_test(data: &str) {
+fn match_alternatives_str_test(data: &str) {
     let _ = data
         .into_match::<&str>()
         .alternatives()
@@ -64,12 +64,12 @@ fn match_static_str_test(data: &str) {
 }
 
 #[test]
-fn match_static_str() {
-    match_static_str_test("#123456");
+fn match_alternatives_str() {
+    match_alternatives_str_test("#123456");
 }
 
 #[test]
 #[should_panic]
-fn match_static_str_panic() {
-    match_static_str_test("#000000");
+fn match_alternatives_str_panic() {
+    match_alternatives_str_test("#000000");
 }
