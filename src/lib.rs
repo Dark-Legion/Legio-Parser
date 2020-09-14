@@ -43,6 +43,7 @@ pub mod traits;
 mod tests {
     mod discarding;
     mod match_alternatives;
+    mod match_mapped_alternatives;
     mod match_static;
     mod match_with;
 
