@@ -1,4 +1,7 @@
-use crate::{result::Match, traits::MatchWith};
+use crate::{
+    result::Match,
+    traits::{MatchFail, MatchWith},
+};
 
 mod private {
     pub trait SafeAsUsize {
@@ -47,27 +50,27 @@ use private::SafeAsUsize;
 /// fully generic type (with no constrains) as the helper parameter.
 ///
 /// [`MatchStatic`]: trait.MatchStatic.html
-pub trait MatchWithInRange<N, F, M, R, H1, H2 = ()>
+pub trait MatchWithInRange<N, F, R, H1, H2 = ()>
 where
-    Self: MatchWith<F, M, R, H1>,
+    Self: MatchWith<F, R, H1>,
 {
     /// Matches a "dynamic" pattern by taking a function instead with taking into account a minimum amount.
-    fn match_min_with(self, minimum: N, pattern: F) -> Match<M, R>;
+    fn match_min_with(self, minimum: N, pattern: F) -> R;
 
     /// Matches a "dynamic" pattern by taking a function instead with taking into account a maximum amount.
-    fn match_max_with(self, maximum: N, pattern: F) -> Match<M, R>;
+    fn match_max_with(self, maximum: N, pattern: F) -> R;
 
     /// Matches a "dynamic" pattern by taking a function instead with taking into account a minimum and maximum amount.
-    fn match_min_max_with(self, minimum: N, maximum: N, pattern: F) -> Match<M, R>;
+    fn match_min_max_with(self, minimum: N, maximum: N, pattern: F) -> R;
 
     /// Matches a "dynamic" pattern by taking a function instead with taking into account a exact amount.
-    fn match_exact_with(self, count: N, pattern: F) -> Match<M, R>;
+    fn match_exact_with(self, count: N, pattern: F) -> R;
 }
 
-impl<E, N, F, H> MatchWithInRange<N, F, Self, Self, H, E> for &[E]
+impl<E, N, F, H> MatchWithInRange<N, F, Match<Self, Self>, H, E> for &[E]
 where
-    Self: MatchWith<F, Self, Self, H>
-        + for<'r> MatchWith<&'r mut dyn FnMut(E) -> bool, Self, Self, H>,
+    Self: MatchWith<F, Match<Self, Self>, H>
+        + for<'r> MatchWith<&'r mut dyn FnMut(E) -> bool, Match<Self, Self>, H>,
     N: SafeAsUsize,
     F: FnMut(E) -> bool,
 {
@@ -79,7 +82,7 @@ where
         }
 
         if let Ok((Some(matched), rest)) =
-            <Self as MatchWith<&mut _, _, _, _>>::match_with(self, &mut pattern).take()
+            <Self as MatchWith<&mut _, _, _>>::match_with(self, &mut pattern).take()
         {
             if minimum <= matched.len() {
                 Match::new(Some(matched), rest)
@@ -95,7 +98,7 @@ where
         let mut maximum: usize = maximum.as_usize();
 
         if maximum <= self.len() {
-            <Self as MatchWith<&mut dyn FnMut(_) -> bool, _, _, _>>::match_with(
+            <Self as MatchWith<&mut dyn FnMut(_) -> bool, _, _>>::match_with(
                 self,
                 &mut move |element: E| {
                     if maximum == 0 {
@@ -108,7 +111,7 @@ where
                 },
             )
         } else {
-            <Self as MatchWith<&mut _, _, _, _>>::match_with(self, &mut pattern)
+            <Self as MatchWith<&mut _, _, _>>::match_with(self, &mut pattern)
         }
     }
 
@@ -149,10 +152,10 @@ where
     }
 }
 
-impl<E, N, F, H> MatchWithInRange<N, F, Self, Self, H, &E> for &[E]
+impl<E, N, F, H> MatchWithInRange<N, F, Match<Self, Self>, H, &E> for &[E]
 where
-    Self: MatchWith<F, Self, Self, H>
-        + for<'r> MatchWith<&'r mut dyn FnMut(&E) -> bool, Self, Self, H>,
+    Self: MatchWith<F, Match<Self, Self>, H>
+        + for<'r> MatchWith<&'r mut dyn FnMut(&E) -> bool, Match<Self, Self>, H>,
     N: SafeAsUsize,
     F: FnMut(&E) -> bool,
 {
@@ -229,10 +232,10 @@ where
     }
 }
 
-impl<N, F, H> MatchWithInRange<N, F, Self, Self, H, char> for &str
+impl<N, F, H> MatchWithInRange<N, F, Match<Self, Self>, H, char> for &str
 where
-    Self: MatchWith<F, Self, Self, H>
-        + for<'r> MatchWith<&'r mut dyn FnMut(char) -> bool, Self, Self, H>,
+    Self: MatchWith<F, Match<Self, Self>, H>
+        + for<'r> MatchWith<&'r mut dyn FnMut(char) -> bool, Match<Self, Self>, H>,
     N: SafeAsUsize,
     F: FnMut(char) -> bool,
 {
@@ -309,10 +312,10 @@ where
     }
 }
 
-impl<N, F, H> MatchWithInRange<N, F, Self, Self, H, &char> for &str
+impl<N, F, H> MatchWithInRange<N, F, Match<Self, Self>, H, &char> for &str
 where
-    Self: MatchWith<F, Self, Self, H>
-        + for<'r> MatchWith<&'r mut dyn FnMut(&char) -> bool, Self, Self, H>,
+    Self: MatchWith<F, Match<Self, Self>, H>
+        + for<'r> MatchWith<&'r mut dyn FnMut(&char) -> bool, Match<Self, Self>, H>,
     N: SafeAsUsize,
     F: FnMut(&char) -> bool,
 {

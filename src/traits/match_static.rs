@@ -1,13 +1,13 @@
-use crate::result::Match;
+use crate::{result::Match, traits::MatchFail};
 
 /// Provides interface for matching single "static" pattern.
 /// "Static" in this case is rather "not dynamic" (not changing) during the call, than constant.
-pub trait MatchStatic<E, T, M, R>: Sized {
+pub trait MatchStatic<E, T, R>: Sized {
     /// Matches a "static" pattern.
-    fn match_static(self, pattern: T) -> Match<M, R>;
+    fn match_static(self, pattern: T) -> R;
 }
 
-impl<E, T, U> MatchStatic<U, T, Self, Self> for &[E]
+impl<E, T, U> MatchStatic<U, T, Match<Self, Self>> for &[E]
 where
     E: PartialEq<U>,
     T: AsRef<[U]>,
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<T> MatchStatic<char, T, Self, Self> for &str
+impl<T> MatchStatic<char, T, Match<Self, Self>> for &str
 where
     T: AsRef<str>,
 {

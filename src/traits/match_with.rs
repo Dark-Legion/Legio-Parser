@@ -9,12 +9,12 @@ use crate::result::Match;
 /// fully generic type (with no constrains) as the helper parameter.
 ///
 /// [`MatchStatic`]: trait.MatchStatic.html
-pub trait MatchWith<F, M, R, H = ()>: Sized {
+pub trait MatchWith<F, R, H = ()>: Sized {
     /// Matches a "dynamic" pattern by taking a function instead.
-    fn match_with(self, pattern: F) -> Match<M, R>;
+    fn match_with(self, pattern: F) -> R;
 }
 
-impl<E, F> MatchWith<F, Self, Self, E> for &[E]
+impl<E, F> MatchWith<F, Match<Self, Self>, E> for &[E]
 where
     E: Clone,
     F: FnMut(E) -> bool,
@@ -30,7 +30,7 @@ where
     }
 }
 
-impl<E, F> MatchWith<F, Self, Self, &E> for &[E]
+impl<E, F> MatchWith<F, Match<Self, Self>, &E> for &[E]
 where
     F: FnMut(&E) -> bool,
 {
@@ -45,7 +45,7 @@ where
     }
 }
 
-impl<F> MatchWith<F, Self, Self, char> for &str
+impl<F> MatchWith<F, Match<Self, Self>, char> for &str
 where
     F: FnMut(char) -> bool,
 {
@@ -60,7 +60,7 @@ where
     }
 }
 
-impl<F> MatchWith<F, Self, Self, &char> for &str
+impl<F> MatchWith<F, Match<Self, Self>, &char> for &str
 where
     F: FnMut(&char) -> bool,
 {
